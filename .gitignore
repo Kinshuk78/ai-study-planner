@@ -47,9 +47,5 @@ data/example_syllabus/llm_cache.jsonl
 # Trained artefacts (Q-tables, BKT/DKT pickles, eval JSON) are committed
 # to evaluation/*/results/ so reviewers can reproduce without retraining.
 
-# Internal team docs — not for the public repo
-CLAUDE.md
-BUILD_PLAN.md
-
 # Editor/tooling local settings
 .claude/
