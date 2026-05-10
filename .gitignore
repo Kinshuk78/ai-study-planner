@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets — never commit
+.env
+.env.local
+*.key
+
+# Data — gitignored per design
+data/assistments_2009/*
+!data/assistments_2009/README.md
+data/.chroma/
+data/example_syllabus/llm_cache.jsonl
+
+# Streamlit
+.streamlit/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Trained artefacts (Q-tables, BKT/DKT pickles, eval JSON) are committed
+# to evaluation/*/results/ so reviewers can reproduce without retraining.
+
+# Internal team docs — not for the public repo
+CLAUDE.md
+BUILD_PLAN.md
+
+# Editor/tooling local settings
+.claude/

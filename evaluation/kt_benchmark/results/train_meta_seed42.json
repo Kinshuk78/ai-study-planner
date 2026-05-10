@@ -1,0 +1,5 @@
+{
+  "seed": 42,
+  "num_train_sequences": 4027,
+  "data_path": "data/assistments_2009/skill_builder_data_corrected_collapsed.csv"
+}

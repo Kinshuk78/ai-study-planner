@@ -1,0 +1,5 @@
+{
+  "epsilon": 0.05,
+  "num_states": 400,
+  "num_actions": 4
+}

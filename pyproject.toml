@@ -1,0 +1,71 @@
+[project]
+name = "ai_study_planner"
+version = "0.1.0"
+description = "Personalised AI Study Planner — six-paradigm study planner integrating KG, BKT, Q-learning, rule-based logic, LLM/RAG, and spaced repetition."
+requires-python = ">=3.10"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = ["data", "evaluation/*/results", "notebooks"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # bugbear
+    "UP",  # pyupgrade
+    "N",   # pep8-naming
+    "SIM", # simplify
+    "RUF", # ruff-specific
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # do not perform function calls in argument defaults
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011", "N802", "N803"]  # `L0` is a BKT parameter name
+"__init__.py" = ["F401"]
+# Entry-point scripts intentionally bootstrap sys.path / dotenv before
+# project imports. E402 is the wrong rule for these files.
+"scripts/*" = ["E402"]
+"evaluation/**/run_*.py" = ["E402"]
+"evaluation/**/train_*.py" = ["E402"]
+"evaluation/**/evaluate.py" = ["E402"]
+"src/ui/streamlit_app.py" = ["E402"]
+# `L0` is the canonical BKT initial-mastery parameter name (Corbett &
+# Anderson 1995). Allow it in the BKT benchmark fitting code.
+"evaluation/kt_benchmark/models.py" = ["N803", "N806", "RUF009"]
+"src/bkt/params.py" = ["N815"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.10"
+strict = false
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+exclude = ["tests/", "evaluation/", "notebooks/"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-v --tb=short"
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["src/ui/*", "*/__init__.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]

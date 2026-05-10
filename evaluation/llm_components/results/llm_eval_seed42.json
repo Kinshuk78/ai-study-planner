@@ -1,0 +1,28 @@
+{
+  "seed": 42,
+  "provider": "AnthropicProvider",
+  "kg_extraction": {
+    "topic_precision": 0.4166666666666667,
+    "topic_recall": 1.0,
+    "edge_precision": 0.0,
+    "edge_recall": 0.0,
+    "predicted_topic_count": 12,
+    "predicted_edge_count": 11
+  },
+  "quiz_difficulty": {
+    "questions_total": 10,
+    "citation_rate": 1.0,
+    "mcq_share": 0.5,
+    "trials": 5,
+    "successful_trials": 5
+  },
+  "grader_agreement": {
+    "agreement_rate": 1.0,
+    "n": 3
+  },
+  "explanation_faithfulness": {
+    "citation_count": 4,
+    "valid_citation_count": 4,
+    "valid_rate": 1.0
+  }
+}

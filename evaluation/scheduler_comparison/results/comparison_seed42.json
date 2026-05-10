@@ -1,0 +1,65 @@
+{
+  "seed": 42,
+  "policies": [
+    {
+      "policy": "rule",
+      "by_profile": {
+        "slow": {
+          "coverage_mean": 1.0,
+          "mastery_mean": 0.078466796875,
+          "n": 8
+        },
+        "average": {
+          "coverage_mean": 1.0,
+          "mastery_mean": 0.13875868055555554,
+          "n": 12
+        },
+        "fast": {
+          "coverage_mean": 1.0,
+          "mastery_mean": 0.12464843750000001,
+          "n": 10
+        }
+      }
+    },
+    {
+      "policy": "thompson",
+      "by_profile": {
+        "slow": {
+          "coverage_mean": 0.7738095238095237,
+          "mastery_mean": 0.032333519345238086,
+          "n": 14
+        },
+        "average": {
+          "coverage_mean": 0.8333333333333334,
+          "mastery_mean": 0.025683593749999994,
+          "n": 12
+        },
+        "fast": {
+          "coverage_mean": 0.7916666666666667,
+          "mastery_mean": 0.041487630208333334,
+          "n": 4
+        }
+      }
+    },
+    {
+      "policy": "qlearning",
+      "by_profile": {
+        "slow": {
+          "coverage_mean": 1.0,
+          "mastery_mean": 0.0693603515625,
+          "n": 8
+        },
+        "average": {
+          "coverage_mean": 1.0,
+          "mastery_mean": 0.08247612847222222,
+          "n": 12
+        },
+        "fast": {
+          "coverage_mean": 1.0,
+          "mastery_mean": 0.10259765624999999,
+          "n": 10
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,139 @@
+# =====================================================================
+# Personalised AI Study Planner — default configuration
+# Read parameters from this file. Do not hardcode them in modules.
+# =====================================================================
+
+# Single seed propagated to numpy, torch, python random, and the simulator.
+random_seed: 42
+
+# ---------------------------------------------------------------------
+# Bayesian Knowledge Tracing (BKT) — src/bkt/
+# ---------------------------------------------------------------------
+bkt:
+  # Default per-topic priors (used when no per-topic override exists).
+  # All values in [0, 1].
+  priors:
+    L0: 0.10        # initial probability of mastery
+    slip: 0.10      # P(incorrect | mastered)
+    guess: 0.20     # P(correct | not mastered)
+    transit: 0.15   # P(transition to mastered after a learning opportunity)
+
+  # Forgetting curve — exponential decay applied between sessions.
+  decay:
+    half_life_days: 7.0
+
+  # Threshold above which a topic is considered "mastered" by the scheduler.
+  mastery_threshold: 0.80
+
+  # Threshold below which a topic is considered "at risk" of being forgotten.
+  at_risk_threshold: 0.50
+
+# ---------------------------------------------------------------------
+# Q-learning — src/scheduler/q_learning.py
+# ---------------------------------------------------------------------
+q_learning:
+  alpha: 0.10              # learning rate
+  gamma: 0.95              # discount factor
+  epsilon_start: 1.00      # initial exploration rate
+  epsilon_end: 0.05        # final exploration rate
+  epsilon_decay: 0.995     # multiplicative per-episode decay
+  num_training_episodes: 5000
+
+  # State discretisation — chosen so the total state space stays around 300.
+  # Total = fraction_mastered_bins * days_remaining_bins * num_at_risk_bins * |actions|
+  # Default: 5 * 5 * 4 * 4 = 400 (slightly above 300; trim if needed).
+  state_bins:
+    fraction_mastered: 5
+    days_remaining: 5
+    num_at_risk: 4
+
+  # Reward shaping.
+  reward:
+    mastery_gain_weight: 1.0
+    on_track_bonus: 0.5
+    deadline_miss_penalty: -5.0
+    at_risk_penalty: -0.2
+
+# ---------------------------------------------------------------------
+# Scheduler — src/scheduler/rules.py
+# ---------------------------------------------------------------------
+scheduler:
+  daily_capacity_minutes: 90
+  weekly_capacity_minutes: 540
+  session_duration_minutes: 30
+
+  # Action types that the policy can choose among (rule layer constrains
+  # the eligible subset).
+  actions:
+    - INTRODUCE_NEW
+    - REVIEW_WEAKEST
+    - QUIZ_EXISTING
+    - REST
+
+# ---------------------------------------------------------------------
+# RAG — src/rag/
+# ---------------------------------------------------------------------
+rag:
+  chunk_size: 500
+  chunk_overlap: 50
+
+  # Focused (single-topic) retrieval.
+  focused:
+    top_k: 5
+
+  # Graph-traversal retrieval — walks prerequisite edges from the queried
+  # topic up to `max_depth` ancestors and pools `top_k_per_node` chunks
+  # from each.
+  traversal:
+    max_depth: 2
+    top_k_per_node: 3
+
+  embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+  vector_store: "chromadb"   # one of {"chromadb", "faiss"}
+  persist_dir: "data/.chroma"
+
+# ---------------------------------------------------------------------
+# LLM provider — src/llm/
+# ---------------------------------------------------------------------
+llm:
+  provider: "anthropic"             # one of {"anthropic", "ollama", "mock"}
+  anthropic_model: "claude-sonnet-4-20250514"
+  ollama_model: "llama3.1:8b-instruct"
+  temperature: 0.2
+  max_tokens: 2048
+  request_timeout_seconds: 60
+
+  # Cache LLM responses for the canonical example syllabus so demo / CI
+  # runs without API calls. Cache lives at this path.
+  cache:
+    enabled: true
+    path: "data/example_syllabus/llm_cache.jsonl"
+
+# ---------------------------------------------------------------------
+# Simulator — src/simulator/
+# ---------------------------------------------------------------------
+simulator:
+  num_students: 30
+  num_weeks: 8
+
+  # Profiles modulate slip / guess / transit rates around the BKT priors.
+  profiles:
+    slow:
+      transit_multiplier: 0.6
+      slip_multiplier: 1.4
+      population_share: 0.3
+    average:
+      transit_multiplier: 1.0
+      slip_multiplier: 1.0
+      population_share: 0.4
+    fast:
+      transit_multiplier: 1.6
+      slip_multiplier: 0.7
+      population_share: 0.3
+
+# ---------------------------------------------------------------------
+# Knowledge graph — src/kg/
+# ---------------------------------------------------------------------
+kg:
+  store_path: "data/example_syllabus/kg.json"
+  edge_type: "is_prerequisite_of"

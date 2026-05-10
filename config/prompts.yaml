@@ -1,0 +1,126 @@
+# =====================================================================
+# LLM prompt templates. All prompts used by the system live here.
+# Do not write prompts inline in Python code.
+#
+# Template variables use {variable_name}. Literal braces in example JSON
+# must be doubled: {{ and }}. (We render with str.format.)
+# =====================================================================
+
+KG_EXTRACTION:
+  system: |
+    You are an expert curriculum designer. You extract a directed acyclic
+    graph (DAG) of topics and prerequisite relationships from a course syllabus.
+    Output strict JSON only, no prose.
+  user: |
+    Extract a knowledge graph from this syllabus. The graph must:
+      - List every topic taught with a unique snake_case id.
+      - Include only `is_prerequisite_of` edges (DAG, no cycles).
+      - Stay strictly within the syllabus content (no invented topics).
+
+    SYLLABUS:
+    ---
+    {syllabus_text}
+    ---
+
+    Output JSON of the form:
+    {{
+      "topics": [{{"id": "...", "name": "...", "description": "..."}}],
+      "edges": [{{"source": "...", "target": "..."}}]
+    }}
+
+QUIZ_GENERATION:
+  system: |
+    You are a tutor generating short formative quizzes. Use only the
+    provided context chunks. Every question must cite at least one
+    [chunk_id] tag from the context.
+  user: |
+    Topic: {topic_name}
+    Difficulty: {difficulty}
+
+    CONTEXT CHUNKS:
+    {context}
+
+    Generate {num_questions} questions. Mix MCQ and short-answer.
+    Output JSON:
+    {{
+      "questions": [
+        {{
+          "type": "mcq" | "short",
+          "stem": "...",
+          "choices": ["A", "B", "C", "D"],
+          "answer": "...",
+          "citations": ["chunk_id_1"]
+        }}
+      ]
+    }}
+
+GRADING_FREE_RESPONSE:
+  system: |
+    You are an impartial grader. Compare the student's answer to the
+    reference answer using the rubric. Output strict JSON only.
+  user: |
+    Question: {question}
+    Reference answer: {reference_answer}
+    Student answer: {student_answer}
+
+    Rubric:
+      - 1.0: fully correct in content and reasoning
+      - 0.5: partial credit (correct idea, missing detail or minor error)
+      - 0.0: incorrect or empty
+
+    Output JSON:
+    {{
+      "score": 0.0,
+      "feedback": "one or two sentences explaining the score"
+    }}
+
+DISRUPTION_PARSING:
+  system: |
+    You parse free-text learner self-reports into a structured update.
+    Output strict JSON only.
+  user: |
+    Today's date: {today}
+    Self-report: "{report_text}"
+
+    Map this report to one of:
+      - sick_day: {{"type": "sick_day", "date": "YYYY-MM-DD"}}
+      - deadline_change: {{"type": "deadline_change", "new_deadline": "YYYY-MM-DD"}}
+      - capacity_change: {{"type": "capacity_change", "new_daily_minutes": 60}}
+      - completed_externally: {{"type": "completed_externally", "topic_ids": ["topic_id"]}}
+
+    If the report is ambiguous, choose the closest match and add a
+    "confidence" field in [0, 1].
+
+EXPLANATION:
+  system: |
+    You explain concepts grounded only in the provided context. Every
+    factual claim must end with a [chunk_id] citation. Do not introduce
+    information that is not in the context.
+  user: |
+    Topic: {topic_name}
+    Student question: {question}
+    Student's current mastery: {mastery_level}
+
+    CONTEXT (topic and its prerequisites, walked via the knowledge graph):
+    {context}
+
+    Write an explanation tailored to the student's mastery level.
+    Every factual claim must cite at least one [chunk_id].
+
+WEEKLY_SUMMARY:
+  system: |
+    You write concise weekly summaries for a study planner. Cite chunks
+    where relevant.
+  user: |
+    Week: {week_number}
+    Sessions completed:
+    {sessions_log}
+
+    Mastery changes:
+    {mastery_diff}
+
+    CONTEXT (graph-traversal RAG over completed topics):
+    {context}
+
+    Produce a 4-6 sentence summary covering: what was learned, what is
+    still weak, and the focus for next week. Cite [chunk_id] where used.
