@@ -40,12 +40,3 @@ data/example_syllabus/llm_cache.jsonl
 
 # Streamlit
 .streamlit/
-
-# Notebooks
-.ipynb_checkpoints/
-
-# Trained artefacts (Q-tables, BKT/DKT pickles, eval JSON) are committed
-# to evaluation/*/results/ so reviewers can reproduce without retraining.
-
-# Editor/tooling local settings
-.claude/
