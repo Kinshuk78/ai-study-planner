@@ -74,6 +74,9 @@ class SimulatedStudent:
     def apply_decay(self, days_elapsed: float, half_life_days: float) -> None:
         for tid in list(self._true_mastery):
             self._true_mastery[tid] = decay_mastery(
-                self._true_mastery[tid], days_elapsed, half_life_days
+                self._true_mastery[tid],
+                days_elapsed,
+                half_life_days,
+                floor=self.params.L0,
             )
         self.predictor.apply_decay_all(days_elapsed, half_life_days)

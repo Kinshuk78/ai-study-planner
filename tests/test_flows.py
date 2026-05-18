@@ -14,7 +14,9 @@ from src.kg import KnowledgeGraph
 from src.llm.mock_provider import MockProvider
 from src.orchestrator import handle_disruption, run_session, run_setup, run_weekly
 from src.rag import InMemoryVectorStore
-from src.types import ActionType, DisruptionType
+from src.scheduler.q_learning import QLearningAgent, QLearningHyperparams
+from src.scheduler.state import StateEncoder
+from src.types import ActionType, DisruptionType, SchedulerState
 
 
 @pytest.fixture
@@ -146,14 +148,54 @@ def test_session_flow_updates_mastery(cfg):
     assert result.next_action in {a for a in ActionType}
 
 
+def test_session_flow_updates_q_learning_when_agent_supplied(cfg):
+    kg, predictor, store = _setup_state(cfg)
+    run_weekly(
+        week_number=1,
+        materials=[("regression", "Regression fits a line " * 30)],
+        kg=kg,
+        predictor=predictor,
+        store=store,
+        provider=MockProvider(),
+        mastery_diff={},
+        sessions_log="",
+    )
+    agent = QLearningAgent(
+        encoder=StateEncoder.from_config(cfg),
+        hyperparams=QLearningHyperparams.from_config(cfg),
+    )
+    state = SchedulerState(
+        fraction_mastered=0.0,
+        days_remaining=14,
+        num_at_risk=2,
+        last_action=ActionType.REST,
+    )
+    sid = agent.encoder.encode(state)
+    aid = agent.encoder.action_index(ActionType.QUIZ_EXISTING)
+    before_q = agent.q_table[sid, aid]
+
+    run_session(
+        topic_id="regression",
+        kg=kg,
+        predictor=predictor,
+        store=store,
+        provider=MockProvider(),
+        answer_fn=lambda q: q.answer,
+        agent=agent,
+        state=state,
+        current_action=ActionType.QUIZ_EXISTING,
+        config=cfg,
+    )
+
+    assert agent.q_table[sid, aid] != before_q
+
+
 # ---------- disruption flow ---------------------------------------
 
 
 def test_disruption_flow_sick_day_replans(cfg):
     from src.types import Session
 
-    # MockProvider's canned sick_day response uses 2026-05-09 — align the
-    # schedule so the replanner has something to push.
     sick_date = date(2026, 5, 9)
     schedule = [
         Session(

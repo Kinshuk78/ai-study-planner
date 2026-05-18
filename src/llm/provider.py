@@ -45,7 +45,7 @@ def get_provider(name: str | None = None) -> LLMProvider:
 
     Wraps the chosen backend in :class:`CachedProvider` when
     ``config.llm.cache.enabled`` is true. The mock provider is never
-    cached — tests rely on it returning canned responses without any
+    cached — tests rely on deterministic responses without any
     filesystem state.
     """
     cfg = load_config()

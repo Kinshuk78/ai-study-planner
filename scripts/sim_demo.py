@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import sys
 from datetime import date
+from itertools import pairwise
 from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -31,7 +32,7 @@ import numpy as np
 from src.bkt import default_params
 from src.config import load_config, seed_everything
 from src.kg import KnowledgeGraph, Topic
-from src.scheduler.rules import eligible_actions
+from src.scheduler.rules import eligible_actions, select_topic_for_action
 from src.simulator.profiles import all_profiles, apply_profile
 from src.simulator.student_model import SimulatedStudent
 from src.types import ActionType
@@ -48,30 +49,9 @@ def make_demo_kg() -> KnowledgeGraph:
     ]
     for tid, name in chain:
         kg.add_topic(Topic(id=tid, name=name))
-    for (a, _), (b, _) in zip(chain, chain[1:], strict=False):
+    for (a, _), (b, _) in pairwise(chain):
         kg.add_prerequisite(a, b)
     return kg
-
-
-def pick_topic_for_action(
-    action: ActionType, beliefs: dict[str, float], cfg: dict
-) -> str | None:
-    """Greedy topic selection within the action."""
-    bkt_cfg = cfg["bkt"]
-    if action == ActionType.INTRODUCE_NEW:
-        candidates = [t for t, m in beliefs.items() if m < bkt_cfg["mastery_threshold"]]
-        return min(candidates, key=lambda t: beliefs[t]) if candidates else None
-    if action == ActionType.REVIEW_WEAKEST:
-        weak = [t for t, m in beliefs.items() if m < bkt_cfg["at_risk_threshold"]]
-        return min(weak, key=lambda t: beliefs[t]) if weak else None
-    if action == ActionType.QUIZ_EXISTING:
-        mids = [
-            t
-            for t, m in beliefs.items()
-            if bkt_cfg["at_risk_threshold"] <= m < bkt_cfg["mastery_threshold"]
-        ]
-        return min(mids, key=lambda t: beliefs[t]) if mids else None
-    return None
 
 
 def fmt_mastery_row(label: str, beliefs: dict[str, float], topic_order: list[str]) -> str:
@@ -127,7 +107,14 @@ def run_student(
             )
             # Greedy rule policy: first non-REST action that is eligible.
             action = next((a for a in eligible if a != ActionType.REST), ActionType.REST)
-            topic_id = pick_topic_for_action(action, beliefs, cfg)
+            topic_id = select_topic_for_action(
+                action,
+                candidate_topic_ids=topic_order,
+                bkt_estimates=beliefs,
+                kg=kg,
+                schedule=[],
+                config=cfg,
+            )
             if topic_id is None:
                 print(f"    s{s}: {action.value:<16} (no eligible topic) — REST")
                 continue

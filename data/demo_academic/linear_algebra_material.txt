@@ -1,0 +1,16 @@
+Linear algebra gives data science a compact language for representing
+academic datasets. A vector can store one student's weekly study hours,
+quiz score, or attendance count. A matrix can store the same variables
+for an entire class, with rows representing students and columns
+representing measured features.
+
+The dot product measures alignment between two vectors. If one vector
+contains study hours and another contains model weights, the dot product
+combines them into a weighted score. Matrix multiplication applies this
+idea to many students at once, making it possible to calculate
+predictions for a whole cohort.
+
+Projection is useful for regression because a fitted line can be
+understood as the projection of observed outcomes onto the space spanned
+by the input features. This connection explains why geometry and matrix
+operations are prerequisites for understanding least squares.

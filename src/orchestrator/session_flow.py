@@ -17,7 +17,7 @@ from src.llm.tasks import explain, generate_quiz
 from src.llm.tasks.grader import grade_mcq, grade_short_response
 from src.rag import Embedder, focused_retrieve, graph_traversal_retrieve
 from src.rag.vectorstore import VectorStore
-from src.scheduler.q_learning import QLearningAgent
+from src.scheduler.q_learning import QLearningAgent, compute_reward
 from src.scheduler.rules import eligible_actions
 from src.types import (
     ActionType,
@@ -49,6 +49,7 @@ def run_session(
     answer_fn: AnswerFn,
     agent: QLearningAgent | None = None,
     state: SchedulerState | None = None,
+    current_action: ActionType = ActionType.QUIZ_EXISTING,
     config: dict,
     num_questions: int = 2,
 ) -> SessionResult:
@@ -87,6 +88,17 @@ def run_session(
 
     after = predictor.mastery(topic_id)
     mastery_changes[topic_id] = (before, after)
+
+    if agent is not None and state is not None:
+        _update_policy_after_session(
+            agent=agent,
+            state=state,
+            action=current_action,
+            predictor=predictor,
+            mastery_gain=after - before,
+            kg=kg,
+            config=config,
+        )
 
     # Graph-traversal explanation grounded in topic + prerequisites.
     traversal_chunks = graph_traversal_retrieve(
@@ -141,3 +153,73 @@ def _choose_next_action(
         if a != ActionType.REST:
             return a
     return ActionType.REST
+
+
+def _update_policy_after_session(
+    *,
+    agent: QLearningAgent,
+    state: SchedulerState,
+    action: ActionType,
+    predictor: BKTPredictor,
+    mastery_gain: float,
+    kg: KnowledgeGraph,
+    config: dict,
+) -> None:
+    """Apply one Q-learning update after a completed study session."""
+    from datetime import date
+
+    next_state = _state_from_predictor(
+        predictor=predictor,
+        last_action=action,
+        days_remaining=max(0, state.days_remaining - 1),
+        config=config,
+    )
+    next_bkt = predictor.all_mastery()
+    next_eligible = eligible_actions(
+        candidate_topic_ids=list(next_bkt.keys()),
+        bkt_estimates=next_bkt,
+        kg=kg,
+        schedule=[],
+        today=date.today(),
+        config=config,
+    )
+    reward = compute_reward(
+        mastery_gain=mastery_gain,
+        on_track=next_state.fraction_mastered >= 0.5,
+        deadline_missed=next_state.days_remaining <= 0 and next_state.fraction_mastered < 1.0,
+        num_at_risk=next_state.num_at_risk,
+        config=config,
+    )
+    agent.update(
+        state=state,
+        action=action,
+        reward=reward,
+        next_state=next_state,
+        next_eligible=next_eligible,
+        done=next_state.days_remaining <= 0,
+    )
+
+
+def _state_from_predictor(
+    *,
+    predictor: BKTPredictor,
+    last_action: ActionType,
+    days_remaining: int,
+    config: dict,
+) -> SchedulerState:
+    bkt = predictor.all_mastery()
+    mastery_threshold = config["bkt"]["mastery_threshold"]
+    at_risk_threshold = config["bkt"]["at_risk_threshold"]
+    total = len(bkt)
+    fraction_mastered = (
+        sum(1 for value in bkt.values() if value >= mastery_threshold) / total
+        if total
+        else 0.0
+    )
+    num_at_risk = sum(1 for value in bkt.values() if value < at_risk_threshold)
+    return SchedulerState(
+        fraction_mastered=fraction_mastered,
+        days_remaining=days_remaining,
+        num_at_risk=num_at_risk,
+        last_action=last_action,
+    )

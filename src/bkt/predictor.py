@@ -84,9 +84,20 @@ class BKTPredictor:
         return posterior
 
     def apply_decay(self, topic_id: str, days_elapsed: float, half_life_days: float) -> float:
-        """Applies forgetting decay to a single topic."""
+        """Applies forgetting decay to a single topic.
+
+        Belief decays toward ``L0`` rather than zero. In this planner,
+        ``L0`` is the learner's baseline prior, so dropping below it
+        would make idle topics look less known than the model's own
+        cold-start estimate.
+        """
         prior = self.mastery(topic_id)
-        decayed = decay_mastery(prior, days_elapsed, half_life_days)
+        decayed = decay_mastery(
+            prior,
+            days_elapsed,
+            half_life_days,
+            floor=self.params.L0,
+        )
         self._mastery[topic_id] = decayed
         return decayed
 

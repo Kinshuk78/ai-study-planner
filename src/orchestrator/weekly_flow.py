@@ -43,6 +43,7 @@ def run_weekly(
     embedder = Embedder(provider)
 
     chunks_added = 0
+    touched_topics: list[str] = []
     for topic_id, body in materials:
         if not kg.has_topic(topic_id):
             raise KeyError(f"unknown topic '{topic_id}' in weekly materials")
@@ -52,6 +53,7 @@ def run_weekly(
             new_chunks = chunk_text(body, source=f"week_{week_number}", topic_id=topic_id)
         if not new_chunks:
             continue
+        touched_topics.append(topic_id)
         store.add(new_chunks, embedder.embed_chunks(new_chunks))
         chunks_added += len(new_chunks)
 
@@ -59,11 +61,16 @@ def run_weekly(
     predictor.apply_decay_all(days_elapsed=7.0, half_life_days=half_life_days)
 
     # Pick the most-recently-touched topic for graph-traversal context.
-    if mastery_diff:
+    if len(touched_topics) == 1:
+        focus_topic = touched_topics[0]
+    elif mastery_diff:
         focus_topic = max(mastery_diff.items(), key=lambda kv: abs(kv[1][1] - kv[1][0]))[0]
+    elif touched_topics:
+        focus_topic = touched_topics[0]
     else:
         focus_topic = next(iter(kg.topics())).id
 
+    focus = kg.get_topic(focus_topic)
     context_chunks = graph_traversal_retrieve(
         query=f"summary of {focus_topic}",
         topic_id=focus_topic,
@@ -74,6 +81,7 @@ def run_weekly(
 
     summary = summarise_week(
         week_number=week_number,
+        focus_topic=f"{focus.name} ({focus.id})",
         sessions_log=sessions_log,
         mastery_diff=mastery_diff,
         chunks=context_chunks,

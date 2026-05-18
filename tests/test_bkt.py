@@ -63,6 +63,11 @@ def test_decay_half_life():
     assert decayed == pytest.approx(0.4, abs=1e-9)
 
 
+def test_decay_half_life_toward_floor():
+    decayed = decay_mastery(0.8, days_elapsed=7, half_life_days=7, floor=0.2)
+    assert decayed == pytest.approx(0.5, abs=1e-9)
+
+
 def test_decay_zero_days_is_noop():
     assert decay_mastery(0.7, 0.0, 7.0) == pytest.approx(0.7)
 
@@ -81,6 +86,8 @@ def test_decay_invalid_inputs():
         decay_mastery(0.5, 1.0, 0.0)
     with pytest.raises(ValueError):
         decay_mastery(1.5, 1.0, 7.0)
+    with pytest.raises(ValueError):
+        decay_mastery(0.5, 1.0, 7.0, floor=-0.1)
 
 
 def test_decay_bounds():
@@ -112,13 +119,20 @@ def test_predictor_unknown_topic_raises():
         p.observe("missing", True)
 
 
-def test_predictor_decay_reduces_mastery():
+def test_predictor_decay_keeps_baseline_prior_stable():
     p = BKTPredictor(make_params(L0=0.9))
     p.init_topic("x")
     before = p.mastery("x")
     after = p.apply_decay("x", days_elapsed=7, half_life_days=7)
-    assert after < before
-    assert after == pytest.approx(before * 0.5)
+    assert after == pytest.approx(before)
+
+
+def test_predictor_decay_moves_toward_L0():
+    p = BKTPredictor(make_params(L0=0.1))
+    p.init_topic("x")
+    p._mastery["x"] = 0.9
+    after = p.apply_decay("x", days_elapsed=7, half_life_days=7)
+    assert after == pytest.approx(0.5)
 
 
 def test_predictor_double_init_is_idempotent():

@@ -9,6 +9,7 @@ from src.types import GradedResponse, RetrievedChunk
 def summarise_week(
     *,
     week_number: int,
+    focus_topic: str | None = None,
     sessions_log: str,
     mastery_diff: dict[str, tuple[float, float]],
     chunks: list[RetrievedChunk],
@@ -23,6 +24,7 @@ def summarise_week(
         "WEEKLY_SUMMARY",
         {
             "week_number": week_number,
+            "focus_topic": focus_topic or "not specified",
             "sessions_log": sessions_log,
             "mastery_diff": diff_lines,
             "context": context,

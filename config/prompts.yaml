@@ -113,6 +113,8 @@ WEEKLY_SUMMARY:
     where relevant.
   user: |
     Week: {week_number}
+    Focus topic: {focus_topic}
+
     Sessions completed:
     {sessions_log}
 

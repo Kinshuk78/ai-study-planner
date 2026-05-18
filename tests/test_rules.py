@@ -11,6 +11,7 @@ from src.scheduler.rules import (
     is_capacity_ok,
     is_deadline_reachable,
     is_prerequisite_met,
+    select_topic_for_action,
 )
 from src.types import ActionType, Session
 
@@ -161,7 +162,7 @@ def test_eligible_actions_blocks_introduce_when_prereqs_missing(kg):
 def test_eligible_actions_review_weakest_when_at_risk(kg):
     cfg = load_config()
     today = date(2026, 5, 11)
-    bkt = {"a": 0.05}  # below at_risk_threshold (default 0.5)
+    bkt = {"a": 0.2}  # introduced, below at_risk_threshold (default 0.5)
     actions = eligible_actions(
         candidate_topic_ids=["a"],
         bkt_estimates=bkt,
@@ -170,6 +171,39 @@ def test_eligible_actions_review_weakest_when_at_risk(kg):
         today=today,
         config=cfg,
     )
+    assert ActionType.REVIEW_WEAKEST in actions
+
+
+def test_eligible_actions_does_not_review_cold_start_topic(kg):
+    cfg = load_config()
+    today = date(2026, 5, 11)
+    bkt = {"a": cfg["bkt"]["priors"]["L0"]}
+    actions = eligible_actions(
+        candidate_topic_ids=["a"],
+        bkt_estimates=bkt,
+        kg=kg,
+        schedule=[],
+        today=today,
+        config=cfg,
+    )
+    assert ActionType.INTRODUCE_NEW in actions
+    assert ActionType.REVIEW_WEAKEST not in actions
+    assert ActionType.QUIZ_EXISTING not in actions
+
+
+def test_eligible_actions_does_not_reintroduce_observed_topic(kg):
+    cfg = load_config()
+    today = date(2026, 5, 11)
+    bkt = {"a": 0.2}
+    actions = eligible_actions(
+        candidate_topic_ids=["a"],
+        bkt_estimates=bkt,
+        kg=kg,
+        schedule=[],
+        today=today,
+        config=cfg,
+    )
+    assert ActionType.INTRODUCE_NEW not in actions
     assert ActionType.REVIEW_WEAKEST in actions
 
 
@@ -186,3 +220,48 @@ def test_eligible_actions_quiz_when_between_thresholds(kg):
         config=cfg,
     )
     assert ActionType.QUIZ_EXISTING in actions
+
+
+def test_select_topic_for_action_respects_cold_start_lifecycle(kg):
+    cfg = load_config()
+    topic_ids = ["a", "b", "c"]
+    bkt = {tid: cfg["bkt"]["priors"]["L0"] for tid in topic_ids}
+    assert (
+        select_topic_for_action(
+            ActionType.INTRODUCE_NEW,
+            candidate_topic_ids=topic_ids,
+            bkt_estimates=bkt,
+            kg=kg,
+            schedule=[],
+            config=cfg,
+        )
+        == "a"
+    )
+    assert (
+        select_topic_for_action(
+            ActionType.REVIEW_WEAKEST,
+            candidate_topic_ids=topic_ids,
+            bkt_estimates=bkt,
+            kg=kg,
+            schedule=[],
+            config=cfg,
+        )
+        is None
+    )
+
+
+def test_select_topic_for_action_respects_prerequisites(kg):
+    cfg = load_config()
+    topic_ids = ["a", "b", "c"]
+    bkt = {"a": 0.9, "b": cfg["bkt"]["priors"]["L0"], "c": cfg["bkt"]["priors"]["L0"]}
+    assert (
+        select_topic_for_action(
+            ActionType.INTRODUCE_NEW,
+            candidate_topic_ids=topic_ids,
+            bkt_estimates=bkt,
+            kg=kg,
+            schedule=[],
+            config=cfg,
+        )
+        == "b"
+    )

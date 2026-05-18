@@ -73,7 +73,8 @@ def test_student_decay_reduces_true_mastery():
     # Force true mastery up.
     student._true_mastery["a"] = 0.9
     student.apply_decay(days_elapsed=7, half_life_days=7)
-    assert student.true_mastery("a") == pytest.approx(0.45, abs=0.05)
+    floor = student.params.L0
+    assert student.true_mastery("a") == pytest.approx(floor + (0.9 - floor) * 0.5)
 
 
 # ---------- runner / reproducibility -------------------------------

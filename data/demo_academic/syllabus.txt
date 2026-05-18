@@ -1,0 +1,15 @@
+Course: Foundations of Data Science for Academic Research
+
+Week 1 introduces linear algebra for data analysis, including vectors,
+matrices, dot products, matrix multiplication, and the geometric meaning
+of projections. Students should be able to represent a small dataset as a
+matrix and explain why linear transformations matter for modelling.
+
+Week 2 covers regression modelling. Students learn how ordinary least
+squares fits a line by minimising squared residuals, how coefficients are
+interpreted, and why assumptions such as linearity, independence, and
+constant variance affect academic research claims.
+
+Assessment: students complete a short quiz after each topic, submit a
+mini analysis of a study-time dataset, and explain how the model supports
+or limits a research conclusion.

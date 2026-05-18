@@ -1,9 +1,7 @@
 """Cache decorator for :class:`LLMProvider`.
 
 Wraps any provider and persists responses to a JSONL file so subsequent
-calls with the same ``(system, user, kwargs)`` are served from disk —
-the canonical example syllabus then runs without API calls (CI-safe)
-and the demo runs offline.
+calls with the same ``(system, user, kwargs)`` are served from disk.
 
 Design choices:
 
@@ -17,7 +15,7 @@ Design choices:
   Including kwargs means changing temperature / max_tokens correctly
   invalidates the cache.
 * **Mock provider is never cached** — tests should be deterministic
-  without filesystem state, and the mock already returns canned
+  without filesystem state, and the mock already returns deterministic
   responses.
 """
 

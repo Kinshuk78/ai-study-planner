@@ -1,0 +1,16 @@
+Regression is a statistical method for estimating how an outcome changes
+with one or more predictors. In an academic study-planning example, a
+researcher might model final exam score as a function of weekly study
+hours, attendance, and prior quiz performance.
+
+Ordinary least squares chooses coefficients that minimise the sum of
+squared residuals. A residual is the difference between an observed
+outcome and the model prediction. Smaller residuals mean the fitted line
+is closer to the observed data, although a close fit does not prove a
+causal relationship.
+
+Regression results should be interpreted with assumptions in mind.
+Linearity means the expected change in the outcome is constant for each
+unit change in a predictor. Independence means one student's error should
+not determine another student's error. Constant variance means prediction
+errors should have similar spread across the range of fitted values.

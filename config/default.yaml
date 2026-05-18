@@ -96,18 +96,18 @@ rag:
 # LLM provider — src/llm/
 # ---------------------------------------------------------------------
 llm:
-  provider: "anthropic"             # one of {"anthropic", "ollama", "mock"}
+  provider: "mock"                  # one of {"anthropic", "ollama", "mock"}
   anthropic_model: "claude-sonnet-4-20250514"
   ollama_model: "llama3.1:8b-instruct"
   temperature: 0.2
   max_tokens: 2048
   request_timeout_seconds: 60
 
-  # Cache LLM responses for the canonical example syllabus so demo / CI
-  # runs without API calls. Cache lives at this path.
+  # Cache LLM responses for live providers. The mock provider is
+  # deterministic and is never cached.
   cache:
     enabled: true
-    path: "data/example_syllabus/llm_cache.jsonl"
+    path: "data/demo_academic/llm_cache.jsonl"
 
 # ---------------------------------------------------------------------
 # Simulator — src/simulator/
@@ -135,5 +135,5 @@ simulator:
 # Knowledge graph — src/kg/
 # ---------------------------------------------------------------------
 kg:
-  store_path: "data/example_syllabus/kg.json"
+  store_path: "data/demo_academic/kg.json"
   edge_type: "is_prerequisite_of"

@@ -33,7 +33,7 @@ from src.scheduler.q_learning import (
     QLearningHyperparams,
     compute_reward,
 )
-from src.scheduler.rules import eligible_actions
+from src.scheduler.rules import eligible_actions, select_topic_for_action
 from src.scheduler.state import StateEncoder
 from src.scheduler.thompson import ThompsonSamplingPolicy
 from src.simulator.profiles import all_profiles, apply_profile
@@ -80,25 +80,6 @@ def build_state(
         num_at_risk=num_at_risk,
         last_action=last_action,
     )
-
-
-def pick_topic_for_action(
-    action: ActionType, beliefs: dict[str, float], config: dict
-) -> str | None:
-    cfg = config["bkt"]
-    if action == ActionType.INTRODUCE_NEW:
-        return min(beliefs, key=lambda t: beliefs[t])
-    if action == ActionType.REVIEW_WEAKEST:
-        weak = [t for t, v in beliefs.items() if v < cfg["at_risk_threshold"]]
-        return min(weak, key=lambda t: beliefs[t]) if weak else None
-    if action == ActionType.QUIZ_EXISTING:
-        mids = [
-            t
-            for t, v in beliefs.items()
-            if cfg["at_risk_threshold"] <= v < cfg["mastery_threshold"]
-        ]
-        return min(mids, key=lambda t: beliefs[t]) if mids else None
-    return None
 
 
 def run_policy(
@@ -162,7 +143,14 @@ def run_policy(
                     state = build_state(student, last_action, days_remaining, config)
                     action = agent.select_action(state, eligible, explore=False)
 
-                topic_id = pick_topic_for_action(action, beliefs, config)
+                topic_id = select_topic_for_action(
+                    action,
+                    candidate_topic_ids=list(beliefs.keys()),
+                    bkt_estimates=beliefs,
+                    kg=kg,
+                    schedule=[],
+                    config=config,
+                )
                 if topic_id is not None:
                     if action == ActionType.INTRODUCE_NEW:
                         introduced.add(topic_id)
@@ -236,7 +224,14 @@ def train_qlearning(*, kg: KnowledgeGraph, config: dict, seed: int) -> QLearning
                 )
                 state = build_state(student, last_action, days_remaining, config)
                 action = agent.select_action(state, eligible)
-                topic_id = pick_topic_for_action(action, beliefs, config)
+                topic_id = select_topic_for_action(
+                    action,
+                    candidate_topic_ids=list(beliefs.keys()),
+                    bkt_estimates=beliefs,
+                    kg=kg,
+                    schedule=[],
+                    config=config,
+                )
                 before = float(np.mean(list(beliefs.values())))
                 if topic_id is not None:
                     student.respond(topic_id)

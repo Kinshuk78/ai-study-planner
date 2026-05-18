@@ -1,8 +1,8 @@
 """Mock LLM provider for deterministic, free unit/integration tests.
 
-Returns canned responses keyed on the rendered prompt's
+Returns deterministic responses keyed on the rendered prompt's
 **system signature** (the first 64 chars of the system prompt). Each
-task module ships a default canned response so tests work without
+task module ships a default response so tests work without
 boilerplate; tests can override responses by mutating
 :attr:`MockProvider.responses` directly.
 """
@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from typing import Any
 
 from src.llm.provider import LLMProvider
@@ -91,6 +92,9 @@ class MockProvider(LLMProvider):
             return self.responses[sig]
 
         # Fall back to prompt-name lookup based on the system prompt.
+        dynamic = self._dynamic_response(system, user)
+        if dynamic is not None:
+            return dynamic
         for name, default in DEFAULT_RESPONSES.items():
             if name in self.responses:
                 continue
@@ -132,3 +136,109 @@ class MockProvider(LLMProvider):
             "WEEKLY_SUMMARY": "weekly summar",
         }
         return markers[name].lower() in system.lower()
+
+    def _dynamic_response(self, system: str, user: str) -> str | None:
+        if self._matches_prompt_name(system, "QUIZ_GENERATION"):
+            return self._quiz_response(user)
+        if self._matches_prompt_name(system, "DISRUPTION_PARSING"):
+            return self._disruption_response(user)
+        if self._matches_prompt_name(system, "EXPLANATION"):
+            return self._explanation_response(user)
+        if self._matches_prompt_name(system, "WEEKLY_SUMMARY"):
+            return self._weekly_summary_response(user)
+        return None
+
+    def _quiz_response(self, user: str) -> str:
+        topic = _extract_value(user, "Topic") or "the topic"
+        citations = _extract_chunk_ids(user)
+        cite = citations[0] if citations else "chunk_demo_1"
+        if "regression" in topic.lower():
+            stem = "What does ordinary least squares minimise?"
+            choices = ["Squared residuals", "Topic count", "Matrix size", "Attendance"]
+            answer = "Squared residuals"
+            short = "Why should regression assumptions be checked?"
+            short_answer = "They affect whether model conclusions are reliable."
+        else:
+            stem = "Which structure can represent a dataset with rows and columns?"
+            choices = ["Matrix", "Scalar", "Residual", "Deadline"]
+            answer = "Matrix"
+            short = "Why are projections useful for understanding regression?"
+            short_answer = "They connect fitted values to geometric representations of data."
+        return json.dumps(
+            {
+                "questions": [
+                    {
+                        "type": "mcq",
+                        "stem": stem,
+                        "choices": choices,
+                        "answer": answer,
+                        "citations": [cite],
+                    },
+                    {
+                        "type": "short",
+                        "stem": short,
+                        "answer": short_answer,
+                        "citations": [cite],
+                    },
+                ]
+            }
+        )
+
+    def _disruption_response(self, user: str) -> str:
+        today = _extract_value(user, "Today's date") or "2026-05-15"
+        report = (_extract_value(user, "Self-report") or user).lower()
+        if "minute" in report or "hour" in report or "capacity" in report:
+            match = re.search(r"(\d+)\s*(?:minutes?|mins?)", report)
+            minutes = int(match.group(1)) if match else 60
+            payload = {"type": "capacity_change", "new_daily_minutes": minutes}
+        elif "deadline" in report or "due" in report:
+            match = re.search(r"\d{4}-\d{2}-\d{2}", user)
+            payload = {"type": "deadline_change", "new_deadline": match.group(0) if match else today}
+        elif "completed" in report or "finished" in report:
+            payload = {"type": "completed_externally", "topic_ids": ["linear_algebra"]}
+        else:
+            payload = {"type": "sick_day", "date": today}
+        payload["confidence"] = 0.95
+        return json.dumps(payload)
+
+    def _explanation_response(self, user: str) -> str:
+        topic = _extract_value(user, "Topic") or "This topic"
+        citations = _extract_chunk_ids(user)
+        cite = citations[0] if citations else "chunk_demo_1"
+        if "regression" in topic.lower():
+            return (
+                f"{topic} estimates how an outcome changes with predictors [{cite}]. "
+                f"Ordinary least squares chooses coefficients by reducing squared residuals [{cite}]."
+            )
+        return (
+            f"{topic} represents academic datasets using vectors and matrices [{cite}]. "
+            f"These structures support later modelling steps such as projections and regression [{cite}]."
+        )
+
+    def _weekly_summary_response(self, user: str) -> str:
+        citations = _extract_chunk_ids(user)
+        cite = citations[0] if citations else "chunk_demo_1"
+        focus = (_extract_value(user, "Focus topic") or "").lower()
+        context = user.split("CONTEXT", 1)[-1].lower()
+        if "regression" in focus or (not focus and "regression" in context):
+            return (
+                f"This week focused on regression modelling and residual-based fitting [{cite}]. "
+                "Next, review assumptions before interpreting research claims."
+            )
+        return (
+            f"This week focused on linear algebra foundations for representing datasets [{cite}]. "
+            "Next, connect vectors, matrices, and projections to regression modelling."
+        )
+
+
+def _extract_value(text: str, label: str) -> str | None:
+    pattern = rf"^{re.escape(label)}:\s*(.+)$"
+    for line in text.splitlines():
+        match = re.match(pattern, line.strip())
+        if match:
+            return match.group(1).strip().strip('"')
+    return None
+
+
+def _extract_chunk_ids(text: str) -> list[str]:
+    return list(dict.fromkeys(re.findall(r"\[([A-Za-z0-9_\-]+)\]", text)))
