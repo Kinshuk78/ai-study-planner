@@ -55,17 +55,21 @@ deadline:
 
 | Policy | Coverage | Mean mastery |
 |---|---:|---:|
-| `rule-only` | **1.00** | ~0.110 |
-| `thompson` (Beta per action) | ~0.80 | ~0.033 |
-| `q-learning` (5k episodes) | **1.00** | ~0.085 |
+| `rule-only` | ~0.483 | **~0.185** |
+| `thompson` (Beta per action) | ~0.294 | ~0.144 |
+| `q-learning` (5k episodes) | ~0.444 | ~0.165 |
 
 **Interpretation:**
 
-* Rule-only and Q-learning both achieve full syllabus coverage — both
-  preferentially pick `INTRODUCE_NEW` while the eligible set permits.
+* The lifecycle-aware rule layer no longer treats every cold-start BKT
+  prior as an already-introduced topic. This lowers coverage compared
+  with the earlier permissive run but avoids unrealistic review/quiz
+  actions on unseen topics.
+* Rule-only has the highest mean mastery in this run because it spends
+  less time exploring and concentrates practice on feasible topics.
 * Thompson Sampling under-covers because its Beta posteriors don't
   encode prerequisite-aware preferences — it explores the action space
-  uniformly and gets stuck reviewing topics it has already mastered.
+  broadly and spends effort on lower-value actions.
 * Absolute mastery values are intentionally modest given the
   aggressive 7-day half-life decay and small session budget — see
   `docs/design_decisions.md` §10 on the sim-to-real gap.

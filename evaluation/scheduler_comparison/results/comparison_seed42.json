@@ -5,18 +5,18 @@
       "policy": "rule",
       "by_profile": {
         "slow": {
-          "coverage_mean": 1.0,
-          "mastery_mean": 0.078466796875,
+          "coverage_mean": 0.3958333333333333,
+          "mastery_mean": 0.155078125,
           "n": 8
         },
         "average": {
-          "coverage_mean": 1.0,
-          "mastery_mean": 0.13875868055555554,
+          "coverage_mean": 0.47222222222222215,
+          "mastery_mean": 0.186669921875,
           "n": 12
         },
         "fast": {
-          "coverage_mean": 1.0,
-          "mastery_mean": 0.12464843750000001,
+          "coverage_mean": 0.5666666666666667,
+          "mastery_mean": 0.20699218750000004,
           "n": 10
         }
       }
@@ -25,19 +25,19 @@
       "policy": "thompson",
       "by_profile": {
         "slow": {
-          "coverage_mean": 0.7738095238095237,
-          "mastery_mean": 0.032333519345238086,
-          "n": 14
+          "coverage_mean": 0.19696969696969696,
+          "mastery_mean": 0.11747159090909091,
+          "n": 11
         },
         "average": {
-          "coverage_mean": 0.8333333333333334,
-          "mastery_mean": 0.025683593749999994,
-          "n": 12
+          "coverage_mean": 0.375,
+          "mastery_mean": 0.12402343749999999,
+          "n": 4
         },
         "fast": {
-          "coverage_mean": 0.7916666666666667,
-          "mastery_mean": 0.041487630208333334,
-          "n": 4
+          "coverage_mean": 0.3444444444444444,
+          "mastery_mean": 0.16874999999999998,
+          "n": 15
         }
       }
     },
@@ -45,18 +45,18 @@
       "policy": "qlearning",
       "by_profile": {
         "slow": {
-          "coverage_mean": 1.0,
-          "mastery_mean": 0.0693603515625,
+          "coverage_mean": 0.375,
+          "mastery_mean": 0.155224609375,
           "n": 8
         },
         "average": {
-          "coverage_mean": 1.0,
-          "mastery_mean": 0.08247612847222222,
+          "coverage_mean": 0.40277777777777773,
+          "mastery_mean": 0.16523437500000002,
           "n": 12
         },
         "fast": {
-          "coverage_mean": 1.0,
-          "mastery_mean": 0.10259765624999999,
+          "coverage_mean": 0.55,
+          "mastery_mean": 0.17365234375000002,
           "n": 10
         }
       }

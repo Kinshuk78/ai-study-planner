@@ -203,9 +203,9 @@ python evaluation/scheduler_comparison/run_comparison.py --seed 42
 
 | Policy | Coverage | Mean mastery |
 |---|---:|---:|
-| rule-only | **1.00** | ~0.110 |
-| Thompson Sampling | ~0.80 | ~0.033 |
-| Q-learning | **1.00** | ~0.085 |
+| rule-only | ~0.483 | **~0.185** |
+| Thompson Sampling | ~0.294 | ~0.144 |
+| Q-learning | ~0.444 | ~0.165 |
 
 ### LLM component evaluations
 

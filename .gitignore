@@ -37,6 +37,8 @@ data/assistments_2009/*
 !data/assistments_2009/README.md
 data/.chroma/
 data/example_syllabus/llm_cache.jsonl
+data/demo_academic/llm_cache.jsonl
+data/demo_academic/kg.json
 
 # Streamlit
 .streamlit/
